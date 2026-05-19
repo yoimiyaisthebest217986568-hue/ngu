@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Mạng Xã Hội & Messenger</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --container-bg: white;
+            --text-color: #333;
+            --text-sub: #65676b;
+            --border-color: #ddd;
+            --post-bg: white;
+            --cmt-bg: #f0f2f5;
+            --nav-bg: white;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #18191a;
+            --container-bg: #242526;
+            --text-color: #e4e6eb;
+            --text-sub: #b0b3b8;
+            --border-color: #3e4042;
+            --post-bg: #242526;
+            --cmt-bg: #3a3b3c;
+            --nav-bg: #242526;
+        }
+
+        body { font-family: Arial, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px 20px 80px 20px; display: flex; flex-direction: column; align-items: center; transition: background 0.3s; }
+        .container { width: 100%; max-width: 500px; position: relative; }
+        h1 { color: #1877f2; text-align: center; margin-bottom: 20px; }
+        
+        .theme-switch { position: absolute; top: -10px; right: 0; background: #1877f2; color: white; border: none; padding: 8px 12px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        
+        /* Ẩn hiện các Tab */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Khung Đăng bài & Bài viết */
+        .post-form, .post { background: var(--post-bg); padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; position: relative; border: 1px solid var(--border-color); }
+        input, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; background: var(--post-bg); color: var(--text-color); }
+        textarea { height: 80px; resize: none; }
+        button.btn-post { width: 100%; background-color: #1877f2; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        button.btn-post:hover { background-color: #166fe5; }
+        
+        .post h3 { margin: 0 0 5px 0; color: #1877f2; }
+        .post p { margin: 0; color: var(--text-color); word-wrap: break-word; padding-bottom: 10px; }
+        .post .time { font-size: 11px; color: var(--text-sub); margin-bottom: 10px; }
+        
+        /* GIAO DIỆN MESSENGER RIÊNG BIỆT */
+        .messenger-box { background: var(--post-bg); border: 1px solid var(--border-color); border-radius: 8px; height: 60vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .mes-header { background: #1877f2; color: white; padding: 15px; font-weight: bold; font-size: 16px; }
+        .chat-box { flex: 1; overflow-y: auto; padding: 15px; background: var(--bg-color); display: flex; flex-direction: column; gap: 8px; }
+        .chat-msg { font-size: 13px; word-wrap: break-word; color: var(--text-color); background: var(--post-bg); padding: 8px 12px; border-radius: 12px; max-width: 80%; align-self: flex-start; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .chat-msg strong { color: #1877f2; display: block; margin-bottom: 2px; }
+        .chat-input-box { display: flex; gap: 5px; padding: 10px; background: var(--post-bg); border-top: 1px solid var(--border-color); }
+        .chat-input-box input { margin-bottom: 0; padding: 10px; font-size: 13px; }
+        .chat-input-box .chat-user { width: 25%; }
+        .chat-input-box .chat-text { width: 60%; }
+        .chat-input-box button { width: 15%; background: #1877f2; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+        /* THANH ĐIỀU HƯỚNG BOTTOM (GIỐNG APP DI ĐỘNG) */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: var(--nav-bg); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 999; }
+        .nav-item { background: none; border: none; color: var(--text-sub); font-weight: bold; font-size: 14px; cursor: pointer; display: flex; flex-direction: column; align-items: center; width: 50%; height: 100%; justify-content: center; }
+        .nav-item.active { color: #1877f2; }
+        .nav-item span { font-size: 20px; margin-bottom: 2px; }
+
+        /* Like & bình luận */
+        .actions { border-top: 1px solid var(--border-color); padding: 10px 0; display: flex; gap: 15px; }
+        .btn-like { background: none; border: none; color: var(--text-sub); font-weight: bold; cursor: pointer; padding: 5px; border-radius: 4px; }
+        .btn-like:hover { background-color: var(--cmt-bg); }
+        .btn-like.liked { color: #e41e3f; }
+        .btn-delete { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-sub); font-weight: bold; cursor: pointer; font-size: 16px; }
+        .btn-delete:hover { color: #ff4d4d; }
+        .comment-section { border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 10px; }
+        .comment-list { margin-bottom: 10px; }
+        .comment-item { background: var(--cmt-bg); padding: 8px 12px; border-radius: 15px; margin-bottom: 5px; font-size: 13px; position: relative; word-wrap: break-word; max-width: 90%; color: var(--text-color); }
+        .comment-item strong { color: #1877f2; display: block; margin-bottom: 2px; }
+        .btn-del-cmt { position: absolute; right: -25px; top: 8px; background: none; border: none; color: var(--text-sub); cursor: pointer; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <button class="theme-switch" onclick="doiGiaoDien()" id="theme-btn">🌙 Dark Mode</button>
+        
+        <!-- TAB 1: FACEBOOK (BẢNG TIN) -->
+        <div id="tab-facebook" class="tab-content active">
+            <h1>Mạng Xã Hội Mini 🚀</h1>
+            <div class="post-form">
+                <input type="text" id="username" placeholder="Nhập tên của bạn...">
+                <textarea id="content" placeholder="Bạn đang nghĩ gì thế?"></textarea>
+                <button class="btn-post" onclick="dangBai()">Đăng bài</button>
+            </div>
+            <div id="bang-tin"></div>
+        </div>
+
+        <!-- TAB 2: MESSENGER (TIN NHẮN RIÊNG) -->
+        <div id="tab-messenger" class="tab-content">
+            <h1>Messenger 💬</h1>
+            <div class="messenger-box">
+                <div class="mes-header">Phòng Chat Tổng</div>
+                <div class="chat-box" id="hop-chat"></div>
+                <div class="chat-input-box">
+                    <input type="text" id="chat-username" class="chat-user" placeholder="Tên...">
+                    <input type="text" id="chat-content" class="chat-text" placeholder="Nhập tin nhắn..." onkeypress="checkEnterChat(event)">
+                    <button onclick="guiTinChat()">Gửi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- THANH MENU ĐIỀU HƯỚNG DƯỚI ĐÁY -->
+    <div class="bottom-nav">
+        <button class="nav-item active" id="btn-nav-fb" onclick="chuyenTab('facebook')">
+            <span>🏠</span>Bảng tin
+        </button>
+        <button class="nav-item" id="btn-nav-mes" onclick="chuyenTab('messenger')">
+            <span>💬</span>Tin nhắn
+        </button>
+    </div>
+
+    <script>
+        window.onload = function() {
+            var savedTheme = localStorage.getItem("theme") || "light";
+            document.documentElement.setAttribute("data-theme", savedTheme);
+            document.getElementById("theme-btn").innerText = savedTheme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
+            taiBaiViet();
+            taiTinChat();
+        };
+
+        // Hàm chuyển đổi tab Facebook <-> Messenger
+        function chuyenTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+
+            if(tabName === 'facebook') {
+                document.getElementById('tab-facebook').classList.add('active');
+                document.getElementById('btn-nav-fb').classList.add('active');
+            } else {
+                document.getElementById('tab-messenger').classList.add('active');
+                document.getElementById('btn-nav-mes').classList.add('active');
+                // Tự động cuộn xuống cuối phòng chat khi bấm vào tab
+                setTimeout(() => { var hc = document.getElementById("hop-chat"); hc.scrollTop = hc.scrollHeight; }, 50);
+            }
+        }
+
+        function doiGiaoDien() {
+            var currentTheme = document.documentElement.getAttribute("data-theme");
+            var newTheme = currentTheme === "dark" ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", newTheme);
+            localStorage.setItem("theme", newTheme);
+            document.getElementById("theme-btn").innerText = newTheme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
+        }
+
+        /* --- CODE XỬ LÝ CHAT (MESSENGER TAB) --- */
+        function checkEnterChat(e) { if (e.key === 'Enter') guiTinChat(); }
+        function guiTinChat() {
+            var user = document.getElementById("chat-username").value.trim();
+            var text = document.getElementById("chat-content").value.trim();
+            if (user === "" || text === "") return;
+
+            var danhSachChat = JSON.parse(localStorage.getItem("mxhTabChat")) || [];
+            danhSachChat.push({ user: user, text: text });
+            localStorage.setItem("mxhTabChat", JSON.stringify(danhSachChat));
+
+            taiTinChat();
+            document.getElementById("chat-content").value = "";
+        }
+        function taiTinChat() {
+            var hopChat = document.getElementById("hop-chat");
+            var danhSachChat = JSON.parse(localStorage.getItem("mxhTabChat")) || [];
+            hopChat.innerHTML = danhSachChat.map(c => `<div class="chat-msg"><strong>${c.user}</strong>${c.text}</div>`).join('');
+            hopChat.scrollTop = hopChat.scrollHeight;
+        }
+
+        /* --- CODE XỬ LÝ BÀI VIẾT (FACEBOOK TAB) --- */
+        function dangBai() {
+            var ten = document.getElementById("username").value.trim();
+            var noiDung = document.getElementById("content").value.trim();
+            if (ten === "" || noiDung === "") { alert("Vui lòng nhập tên và nội dung!"); return; }
+
+            var thoiGian = "Đăng lúc: " + new Date().toLocaleTimeString();
+            var id = Date.now(); 
+            var baiVietMoi = { id: id, ten: ten, noiDung: noiDung, thoiGian: thoiGian, likes: 0, isLiked: false, comments: [] };
+            
+            var danhSachBai = JSON.parse(localStorage.getItem("mangXaHoiTab")) || [];
+            danhSachBai.unshift(baiVietMoi);
+            localStorage.setItem("mangXaHoiTab", JSON.stringify(danhSachBai));
+
+            taiBaiViet();
+            document.getElementById("content").value = "";
+        }
+
+        function taiBaiViet() {
+            var bangTin = document.getElementById("bang-tin");
+            bangTin.innerHTML = ""; 
+            var danhSachBai = JSON.parse(localStorage.getItem("mangXaHoiTab")) || [];
+
+            danhSachBai.forEach(post => {
+                var field = document.createElement("div");
+                field.className = "post";
+                var timClass = post.isLiked ? "btn-like liked" : "btn-like";
+                var timText = post.isLiked ? "❤️ Đã thích (" + post.likes + ")" : "🤍 Thích (" + post.likes + ")";
+
+                var cmtHtml = "";
+                if(post.comments && post.comments.length > 0) {
+                    post.comments.forEach(cmt => {
+                        cmtHtml += `<div class="comment-item"><strong>${cmt.user}</strong> ${cmt.text}<button class="btn-del-cmt" onclick="xoaBinhLuan(${post.id}, ${cmt.id})">×</button></div>`;
+                    });
+                }
+
+                field.innerHTML = `
+                    <button class="btn-delete" onclick="xoaBai(${post.id})">×</button>
+                    <h3>${post.ten}</h3>
+                    <div class="time">${post.time || post.thoiGian}</div>
+                    <p>${post.noiDung}</p>
+                    <div class="actions"><button class="${timClass}" onclick="thaTim(${post.id})">${timText}</button></div>
+                    <div class="comment-section">
+                        <div class="comment-list">${cmtHtml}</div>
+                        <div class="cmt-input-box">
+                            <input type="text" id="cmt-user-${post.id}" class="cmt-user" placeholder="Tên...">
+                            <input type="text" id="cmt-text-${post.id}" class="cmt-text" placeholder="Bình luận...">
+                            <button onclick="themBinhLuan(${post.id})">Gửi</button>
+                        </div>
+                    </div>`;
+                bangTin.appendChild(field);
+            });
+        }
+
+        function thaTim(id) {
+            var danhSachBai = JSON.parse(localStorage.getItem("mangXaHoiTab")) || [];
+            var baiViet = danhSachBai.find(p => p.id === id);
+            if (baiViet) {
+                baiViet.isLiked = !baiViet.isLiked;
+                baiViet.likes += baiViet.isLiked ? 1 : -1;
+                localStorage.setItem("mangXaHoiTab", JSON.stringify(danhSachBai));
+                taiBaiViet();
+            }
+        }
+
+        function xoaBai(id) {
+            if (confirm("Xóa bài viết này?")) {
+                var danhSachBai = JSON.parse(localStorage.getItem("mangXaHoiTab")) || [];
+                danhSachBai = danhSachBai.filter(p => p.id !== id);
+                localStorage.setItem("mangXaHoiTab", JSON.stringify(danhSachBai));
+                taiBaiViet();
+            }
+        }
+
+        function themBinhLuan(postId) {
+            var user = document.getElementById(`cmt-user-${postId}`).value.trim();
+            var text = document.getElementById(`cmt-text-${postId}`).value.trim();
+            if (!user || !text) return;
+            var danhSachBai = JSON.parse(localStorage.getItem("mangXaHoiTab")) || [];
+            var baiViet = danhSachBai.find(p => p.id === postId);
+            if (baiViet) {
+                if(!baiViet.comments) baiViet.comments = [];
+                baiViet.comments.push({ id: Date.now(), user: user, text: text });
+                localStorage.setItem("mangXaHoiTab", JSON.stringify(danhSachBai));
+                taiBaiViet();
+            }
+        }
+
+        function xoaBinhLuan(postId, cmtId) {
+            var danhSachBai = JSON.parse(localStorage.getItem("mangXaHoiTab")) || [];
+            var baiViet = danhSachBai.find(p => p.id === postId);
+            if (baiViet && baiViet.comments) {
+                baiViet.comments = baiViet.comments.filter(c => c.id !== cmtId);
+                localStorage.setItem("mangXaHoiTab", JSON.stringify(danhSachBai));
+                taiBaiViet();
+            }
+        }
+    </script>
+</body>
+</html>
