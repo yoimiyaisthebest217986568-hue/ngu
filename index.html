@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>θ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Nhúng thư viện Supabase chính chủ để kết nối database đám mây -->
+    <script src="https://jsdelivr.net"></script>
     <style>
         :root { --bg-color: #f0f2f5; --container-bg: white; --text-color: #333; --text-sub: #65676b; --border-color: #ddd; --post-bg: white; --cmt-bg: #f0f2f5; --nav-bg: white; }
         [data-theme="dark"] { --bg-color: #18191a; --container-bg: #242526; --text-color: #e4e6eb; --text-sub: #b0b3b8; --border-color: #3e4042; --post-bg: #242526; --cmt-bg: #3a3b3c; --nav-bg: #242526; }
@@ -45,16 +47,16 @@
         <div id="tab-facebook" class="tab-content active">
             <h1>Chào Mừng Đến Với θ</h1>
             <div class="post-form">
-                <input type="text" id="username" placeholder="Nhập tên...">
+                <input type="text" id="username" placeholder="Nhập tên của bạn...">
                 <textarea id="content" placeholder="Bạn đang nghĩ gì thế?"></textarea>
-                <button class="btn-post" onclick="dangBai()">Đăng bài</button>
+                <button class="btn-post" onclick="dangBai()">Đăng bài trực tuyến</button>
             </div>
             <div id="bang-tin">Đang tải...</div>
         </div>
 
         <!-- TAB TIN NHẮN -->
         <div id="tab-messenger" class="tab-content">
-            <h1>θ</h1>
+            <h1>Messenger 💬</h1>
             <div class="messenger-box">
                 <div class="mes-header">Chat Chung</div>
                 <div class="chat-box" id="hop-chat">Đang tải...</div>
@@ -73,42 +75,71 @@
     </div>
 
     <script>
-        // Đường truyền dữ liệu đám mây chung (Dùng chung một kho dữ liệu bí mật)
-        const BIN_ID = "66468759ad19ca34f869fdf5"; 
-        const API_KEY = "$2a$10$O0SInmshZms9w6w5mRAnS.f1bshXwzE/lH6Z4eB4eRkZfXfK9/U3i";
-        const REQ_URL = `https://jsonbin.io{BIN_ID}`;
+        // Cấu hình cổng kết nối tới Database đám mây Supabase
+        const SUPABASE_URL = "https://supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvY2JieWhheGJweG9uc3RnbWxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTYxODY0MDMsImV4cCI6MjAzMTc2MjQwM30.7H_LhWIdTz_YAn-iW8oA2W2bTfUvH1_g_r56H-2FvH8";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         window.onload = function() {
             var savedTheme = localStorage.getItem("theme") || "light";
             document.documentElement.setAttribute("data-theme", savedTheme);
             document.getElementById("theme-btn").innerText = savedTheme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
             
-            // Tải dữ liệu từ mạng về ngay khi mở trang
-            docDuLieuTrenMang();
+            // Tải dữ liệu ban đầu
+            taiDuLieuTuSupabase();
             
-            // Tự động quét và cập nhật tin nhắn mới liên tục sau mỗi 3 giây (Realtime)
-            setInterval(docDuLieuTrenMang, 3000);
+            // Cơ chế Realtime: Cứ 2 giây quét dữ liệu mới một lần để đảm bảo hai máy thấy nhau
+            setInterval(taiDuLieuTuSupabase, 2000);
         };
 
-        let duLieuTong = { posts: [], chats: [] };
+        async function taiDuLieuTuSupabase() {
+            // Lấy 50 tin nhắn mới nhất
+            const { data: chats } = await _supabase.from('chats').select('*').order('id', { ascending: true }).limit(50);
+            if (chats) {
+                var hopChat = document.getElementById("hop-chat");
+                hopChat.innerHTML = chats.map(c => `<div class="chat-msg"><strong>${c.user}</strong>${c.text}</div>`).join('');
+                hopChat.scrollTop = hopChat.scrollHeight;
+            }
 
-        function docDuLieuTrenMang() {
-            fetch(REQ_URL, { headers: { "X-Master-Key": API_KEY } })
-            .then(res => res.json())
-            .then(json => {
-                duLieuTong = json.record;
-                taiBaiViet();
-                taiTinChat();
-            }).catch(err => console.error("Lỗi đồng bộ đám mây:", err));
+            // Lấy 30 bài đăng mới nhất
+            const { data: posts } = await _supabase.from('posts').select('*').order('id', { ascending: false }).limit(30);
+            if (posts) {
+                var bangTin = document.getElementById("bang-tin");
+                bangTin.innerHTML = posts.map(p => `
+                    <div class="post">
+                        <h3>${p.user}</h3>
+                        <div class="time">${p.time}</div>
+                        <p>${p.text}</p>
+                    </div>
+                `).join('');
+            }
         }
 
-        function dayDuLieuLenMang() {
-            fetch(REQ_URL, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json", "X-Master-Key": API_KEY },
-                body: JSON.stringify(duLieuTong)
-            }).then(() => { docDuLieuTrenMang(); });
+        async function guiTinChat() {
+            var user = document.getElementById("chat-username").value.trim();
+            var text = document.getElementById("chat-content").value.trim();
+            if (!user || !text) return;
+
+            // Đẩy tin nhắn thẳng lên server đám mây
+            await _supabase.from('chats').insert([{ user: user, text: text }]);
+            document.getElementById("chat-content").value = "";
+            taiDuLieuTuSupabase();
         }
+
+        async function dangBai() {
+            var user = document.getElementById("username").value.trim();
+            var text = document.getElementById("content").value.trim();
+            if (!user || !text) { alert("Vui lòng nhập đầy đủ thông tin!"); return; }
+
+            var time = "Đăng lúc: " + new Date().toLocaleTimeString();
+            
+            // Đẩy bài viết thẳng lên server đám mây
+            await _supabase.from('posts').insert([{ user: user, text: text, time: time }]);
+            document.getElementById("content").value = "";
+            taiDuLieuTuSupabase();
+        }
+
+        function checkEnterChat(e) { if (e.key === 'Enter') guiTinChat(); }
 
         function chuyenTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -129,53 +160,6 @@
             document.documentElement.setAttribute("data-theme", newTheme);
             localStorage.setItem("theme", newTheme);
             document.getElementById("theme-btn").innerText = newTheme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
-        }
-
-        /* --- XỬ LÝ CHAT TRỰC TUYẾN --- */
-        function checkEnterChat(e) { if (e.key === 'Enter') guiTinChat(); }
-        function guiTinChat() {
-            var user = document.getElementById("chat-username").value.trim();
-            var text = document.getElementById("chat-content").value.trim();
-            if (!user || !text) return;
-
-            if(!duLieuTong.chats) duLieuTong.chats = [];
-            duLieuTong.chats.push({ user: user, text: text });
-            
-            dayDuLieuLenMang();
-            document.getElementById("chat-content").value = "";
-        }
-        function taiTinChat() {
-            var hopChat = document.getElementById("hop-chat");
-            if(!duLieuTong.chats || duLieuTong.chats.length === 0) { hopChat.innerHTML = "Chưa có tin nhắn nào."; return; }
-            hopChat.innerHTML = duLieuTong.chats.map(c => `<div class="chat-msg"><strong>${c.user}</strong>${c.text}</div>`).join('');
-            hopChat.scrollTop = hopChat.scrollHeight;
-        }
-
-        /* --- XỬ LÝ BÀI VIẾT TRỰC TUYẾN --- */
-        function dangBai() {
-            var ten = document.getElementById("username").value.trim();
-            var noiDung = document.getElementById("content").value.trim();
-            if (!ten || !noiDung) { alert("Vui lòng nhập đầy đủ!"); return; }
-
-            var thoiGian = "Đăng lúc: " + new Date().toLocaleTimeString();
-            
-            if(!duLieuTong.posts) duLieuTong.posts = [];
-            duLieuTong.posts.unshift({ ten: ten, noiDung: noiDung, thoiGian: thoiGian });
-            
-            dayDuLieuLenMang();
-            document.getElementById("content").value = "";
-        }
-        function taiBaiViet() {
-            var bangTin = document.getElementById("bang-tin");
-            if(!duLieuTong.posts || duLieuTong.posts.length === 0) { bangTin.innerHTML = "Chưa có bài đăng nào."; return; }
-            
-            bangTin.innerHTML = duLieuTong.posts.map(post => `
-                <div class="post">
-                    <h3>${post.ten}</h3>
-                    <div class="time">${post.thoiGian}</div>
-                    <p>${post.noiDung}</p>
-                </div>
-            `).join('');
         }
     </script>
 </body>
