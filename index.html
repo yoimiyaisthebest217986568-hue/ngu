@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>θ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Nhúng thư viện Supabase chính chủ để kết nối database đám mây -->
     <script src="https://jsdelivr.net"></script>
     <style>
         :root { --bg-color: #f0f2f5; --container-bg: white; --text-color: #333; --text-sub: #65676b; --border-color: #ddd; --post-bg: white; --cmt-bg: #f0f2f5; --nav-bg: white; }
@@ -43,23 +42,23 @@
     <div class="container">
         <button class="theme-switch" onclick="doiGiaoDien()" id="theme-btn">🌙 Dark Mode</button>
         
-        <!-- TAB BẢNG TIN -->
+        <!-- TAB 1 -->
         <div id="tab-facebook" class="tab-content active">
-            <h1>Chào Mừng Đến Với θ</h1>
+            <h1>θ</h1>
             <div class="post-form">
-                <input type="text" id="username" placeholder="Nhập tên của bạn...">
+                <input type="text" id="username" placeholder="Tên...">
                 <textarea id="content" placeholder="Bạn đang nghĩ gì thế?"></textarea>
-                <button class="btn-post" onclick="dangBai()">Đăng bài trực tuyến</button>
+                <button class="btn-post" onclick="dangBai()">Đăng bài</button>
             </div>
-            <div id="bang-tin">Đang tải...</div>
+            <div id="bang-tin"></div>
         </div>
 
-        <!-- TAB TIN NHẮN -->
+        <!-- TAB 2 -->
         <div id="tab-messenger" class="tab-content">
-            <h1>Messenger 💬</h1>
+            <h1>Chat 💬</h1>
             <div class="messenger-box">
-                <div class="mes-header">Chat Chung</div>
-                <div class="chat-box" id="hop-chat">Đang tải...</div>
+                <div class="mes-header">Chat</div>
+                <div class="chat-box" id="hop-chat"></div>
                 <div class="chat-input-box">
                     <input type="text" id="chat-username" class="chat-user" placeholder="Tên...">
                     <input type="text" id="chat-content" class="chat-text" placeholder="Nhập tin nhắn..." onkeypress="checkEnterChat(event)">
@@ -71,13 +70,12 @@
 
     <div class="bottom-nav">
         <button class="nav-item active" id="btn-nav-fb" onclick="chuyenTab('facebook')"><span>🏠</span>Bảng tin</button>
-        <button class="nav-item" id="btn-nav-mes" onclick="chuyenTab('messenger')"><span>💬</span>Tin nhắn</button>
+        <button class="nav-item" id="btn-nav-mes" onclick="chuyenTab('messenger')"><span>💬</span>Chat</button>
     </div>
 
     <script>
-        // Cấu hình cổng kết nối tới Database đám mây Supabase
         const SUPABASE_URL = "https://supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvY2JieWhheGJweG9uc3RnbWxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTYxODY0MDMsImV4cCI6MjAzMTc2MjQwM30.7H_LhWIdTz_YAn-iW8oA2W2bTfUvH1_g_r56H-2FvH8";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvY2JieWhheGJweG9uc3RnbWxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTYxODY0MDMsImV4cCI6MjAzMTetMjQwM30.7H_LhWIdTz_YAn-iW8oA2W2bTfUvH1_g_r56H-2FvH8";
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         window.onload = function() {
@@ -85,23 +83,18 @@
             document.documentElement.setAttribute("data-theme", savedTheme);
             document.getElementById("theme-btn").innerText = savedTheme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
             
-            // Tải dữ liệu ban đầu
             taiDuLieuTuSupabase();
-            
-            // Cơ chế Realtime: Cứ 2 giây quét dữ liệu mới một lần để đảm bảo hai máy thấy nhau
             setInterval(taiDuLieuTuSupabase, 2000);
         };
 
         async function taiDuLieuTuSupabase() {
-            // Lấy 50 tin nhắn mới nhất
             const { data: chats } = await _supabase.from('chats').select('*').order('id', { ascending: true }).limit(50);
             if (chats) {
                 var hopChat = document.getElementById("hop-chat");
-                hopChat.innerHTML = chats.map(c => `<div class="chat-msg"><strong>${c.user}</strong>${c.text}</div>`).join('');
+                hopChat.innerHTML = chats.map(c => `<div class="chat-msg"><strong>${c.user}: </strong>${c.text}</div>`).join('');
                 hopChat.scrollTop = hopChat.scrollHeight;
             }
 
-            // Lấy 30 bài đăng mới nhất
             const { data: posts } = await _supabase.from('posts').select('*').order('id', { ascending: false }).limit(30);
             if (posts) {
                 var bangTin = document.getElementById("bang-tin");
@@ -120,7 +113,6 @@
             var text = document.getElementById("chat-content").value.trim();
             if (!user || !text) return;
 
-            // Đẩy tin nhắn thẳng lên server đám mây
             await _supabase.from('chats').insert([{ user: user, text: text }]);
             document.getElementById("chat-content").value = "";
             taiDuLieuTuSupabase();
@@ -132,8 +124,6 @@
             if (!user || !text) { alert("Vui lòng nhập đầy đủ thông tin!"); return; }
 
             var time = "Đăng lúc: " + new Date().toLocaleTimeString();
-            
-            // Đẩy bài viết thẳng lên server đám mây
             await _supabase.from('posts').insert([{ user: user, text: text, time: time }]);
             document.getElementById("content").value = "";
             taiDuLieuTuSupabase();
